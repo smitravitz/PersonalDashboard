@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>World Population Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+    :root {
+      --bg: #ffffff;
+      --text: #000000;
+    }
+    .dark {
+      --bg: #121212;
+      --text: #f0f0f0;
+    }
+    header {
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #chart-container {
+      width: 95vw;
+      max-width: 1200px;
+      margin: auto;
+    }
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
+    select, button {
+      margin: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <label for="region">Region: </label>
+      <select id="region">
+        <option value="All">All</option>
+        <option value="Africa">Africa</option>
+        <option value="Americas">Americas</option>
+        <option value="Asia">Asia</option>
+        <option value="Europe">Europe</option>
+        <option value="Oceania">Oceania</option>
+      </select>
+    </div>
+    <button onclick="toggleTheme()">🌓 Toggle Theme</button>
+  </header>
+
+  <div id="chart-container">
+    <canvas id="populationChart"></canvas>
+  </div>
+
+  <script>
+    const API_URL = "https://populationvisualizer.onrender.com/population";
+    let allData = [];
+
+    const ctx = document.getElementById('populationChart').getContext('2d');
+    let chart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: [], datasets: [] },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'World Population by Country'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const d = allData[ctx.dataIndex];
+                return [
+                  "Capital: " + d.capital,
+                  "Region: " + d.region,
+                  "Population: " + d.population.toLocaleString()
+                ];
+              },
+              title: function(ctx) {
+                const d = allData[ctx[0].dataIndex];
+                return d.country;
+              },
+              afterBody: function(ctx) {
+                const d = allData[ctx[0].dataIndex];
+                return d.flag ? "🌐 Flag: " + d.flag : "";
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: val => val.toLocaleString()
+            }
+          },
+          x: {
+            ticks: { autoSkip: true, maxRotation: 60, minRotation: 45 }
+          }
+        }
+      }
+    });
+
+    function updateChart(data) {
+      chart.data.labels = data.map(d => d.country);
+      chart.data.datasets = [{
+        label: "Population",
+        data: data.map(d => d.population),
+        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }];
+      chart.update();
+    }
+
+    function filterByRegion(region) {
+      if (region === "All") return allData;
+      return allData.filter(d => d.region === region);
+    }
+
+    document.getElementById("region").addEventListener("change", (e) => {
+      const filtered = filterByRegion(e.target.value);
+      updateChart(filtered);
+    });
+
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+    }
+
+    fetch(API_URL)
+      .then(res => res.json())
+      .then(data => {
+        allData = data.filter(d => d.country && d.population > 0);
+        allData.sort((a, b) => b.population - a.population);
+        updateChart(allData);
+      })
+      .catch(err => {
+        console.error("Fetch error:", err);
+        alert("Failed to load population data.");
+      });
+  </script>
+</body>
+</html>
