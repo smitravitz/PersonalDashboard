@@ -60,4 +60,4 @@ PersonalDashboard/
 
 ## 📜 License
 
-MIT — feel free to use, remix, or extend.
+GNU GPL v3 — You are free to use, modify, and distribute this project, provided that any derivative work is also licensed under GPL v3. Full license text: https://www.gnu.org/licenses/gpl-3.0.html
